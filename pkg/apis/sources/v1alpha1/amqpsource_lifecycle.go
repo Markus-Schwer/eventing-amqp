@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	"knative.dev/eventing/pkg/apis/duck"
 	"knative.dev/pkg/apis"
-	"knative.dev/pkg/apis/duck"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
 )
 

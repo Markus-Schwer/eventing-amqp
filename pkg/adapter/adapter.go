@@ -1,4 +1,4 @@
-package amqpadapter
+package adapter
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding"
 	"github.com/cloudevents/sdk-go/v2/protocol/http"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	sourcesv1alpha1 "github.com/Markus-Schwer/eventing-amqp/pkg/apis/sources/v1alpha1"

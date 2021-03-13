@@ -5,7 +5,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
+	"knative.dev/pkg/kmeta"
+	"knative.dev/pkg/webhook/resourcesemantics"
 )
 
 // +genclient
@@ -27,12 +32,12 @@ type AmqpSource struct {
 	Status AmqpSourceStatus `json:"status,omitempty"`
 }
 
-// var _ runtime.Object = (*AmqpSource)(nil)
-// var _ resourcesemantics.GenericCRD = (*AmqpSource)(nil)
-// var _ kmeta.OwnerRefable = (*AmqpSource)(nil)
-// var _ apis.Defaultable = (*AmqpSource)(nil)
-// var _ apis.Validatable = (*AmqpSource)(nil)
-// var _ duckv1.KRShaped = (*AmqpSource)(nil)
+var _ runtime.Object = (*AmqpSource)(nil)
+var _ resourcesemantics.GenericCRD = (*AmqpSource)(nil)
+var _ kmeta.OwnerRefable = (*AmqpSource)(nil)
+var _ apis.Defaultable = (*AmqpSource)(nil)
+var _ apis.Validatable = (*AmqpSource)(nil)
+var _ duckv1.KRShaped = (*AmqpSource)(nil)
 
 // AmqpSourceSpec holds the desired state of the AmqpSource (from the client).
 type AmqpSourceSpec struct {
@@ -75,6 +80,10 @@ type AmqpSourceStatus struct {
 	// * ObservedGeneration - the 'Generation' of the Service that was last processed by the controller.
 	// * Conditions - the latest available observations of a resource's current state.
 	duckv1.SourceStatus `json:",inline"`
+}
+
+func (s *AmqpSource) GetGroupVersionKind() schema.GroupVersionKind {
+	return SchemeGroupVersion.WithKind("AmqpSource")
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

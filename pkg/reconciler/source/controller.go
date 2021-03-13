@@ -3,8 +3,6 @@ package source
 import (
 	"context"
 
-	"knative.dev/pkg/tracker"
-
 	"github.com/kelseyhightower/envconfig"
 
 	//k8s.io imports
@@ -47,7 +45,7 @@ func NewController(ctx context.Context, _ configmap.Watcher) *controller.Impl {
 	r := &Reconciler{
 		kubeClientSet:       kubeclient.Get(ctx),
 		amqpClientSet:       amqpclient.Get(ctx),
-		deploymentListener:  deploymentInformer.Lister(),
+		deploymentLister:    deploymentInformer.Lister(),
 		receiveAdapterImage: env.Image, // can be empty
 	}
 	impl := amqpreconciler.NewImpl(ctx, r)
@@ -58,10 +56,6 @@ func NewController(ctx context.Context, _ configmap.Watcher) *controller.Impl {
 
 	// Watch for changes from any AmqpSource object
 	amqpInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
-
-	// Tracker is used to notify us that the mt receive adapter has changed so that
-	// we can reconcile all AmqpSources that depends on it
-	r.tracker = tracker.New(impl.EnqueueKey, controller.GetTrackerLease(ctx))
 
 	deploymentInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.FilterControllerGK(v1alpha1.Kind("AmqpSource")),
