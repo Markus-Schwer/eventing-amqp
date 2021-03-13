@@ -1,0 +1,16 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validation.webhook.amqp.sources.knative.dev
+  labels:
+    amqp.eventing.knative.dev/release: devel
+webhooks:
+- admissionReviewVersions: ["v1", "v1beta1"]
+  clientConfig:
+    service:
+      name: amqp-webhook
+      namespace: playground
+  sideEffects: None
+  failurePolicy: Fail
+  name: validation.webhook.amqp.sources.knative.dev
+  timeoutSeconds: 2

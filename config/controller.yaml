@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amqp-controller-manager
+  namespace: playground
+  labels:
+    amqp.eventing.knative.dev/release: devel
+    control-plane: amqp-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels: &labels
+      control-plane: amqp-controller-manager
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: amqp-controller-manager
+      containers:
+        - name: manager
+          image: ko://github.com/Markus-Schwer/eventing-amqp/cmd/controller
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: METRICS_DOMAIN
+              value: knative.dev/sources
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+            - name: amqp_RA_IMAGE
+              value: ko://github.com/Markus-Schwer/eventing-amqp/cmd/receive_adapter
+          volumeMounts:
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 20m
+              memory: 20Mi
+      serviceAccount: amqp-controller-manager
+      terminationGracePeriodSeconds: 10

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: amqp-webhook-certs
+  namespace: playground
+  labels:
+    amqp.eventing.knative.dev/release: devel
+# The data is populated at install time.

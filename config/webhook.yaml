@@ -1,0 +1,106 @@
+
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: amqp-webhook
+#   namespace: playground
+#   labels:
+#     amqp.eventing.knative.dev/release: devel
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels: &labels
+#       app: amqp-webhook
+#       role: amqp-webhook
+#   template:
+#     metadata:
+#       labels: *labels
+#     spec:
+#       # To avoid node becoming SPOF, spread our replicas to different nodes.
+#       affinity:
+#         podAntiAffinity:
+#           preferredDuringSchedulingIgnoredDuringExecution:
+#           - podAffinityTerm:
+#               labelSelector:
+#                 matchLabels:
+#                   app: amqp-webhook
+#               topologyKey: kubernetes.io/hostname
+#             weight: 100
+
+#       serviceAccountName: amqp-webhook
+#       enableServiceLinks: false
+#       containers:
+#       - name: amqp-webhook
+#         terminationMessagePolicy: FallbackToLogsOnError
+
+#         # This is the Go import path for the binary that is containerized
+#         # and substituted here.
+#         image: ko://github.com/Markus-Schwer/eventing-amqp/cmd/webhook
+
+#         resources:
+#           requests:
+#             # taken from serving.
+#             cpu: 20m
+#             memory: 20Mi
+#           limits:
+#             # taken from serving.
+#             cpu: 200m
+#             memory: 200Mi
+
+#         env:
+#         - name: SYSTEM_NAMESPACE
+#           valueFrom:
+#             fieldRef:
+#               fieldPath: metadata.namespace
+#         - name: CONFIG_LOGGING_NAME
+#           value: config-logging
+#         - name: METRICS_DOMAIN
+#           value: knative.dev/sources
+#         - name: WEBHOOK_NAME
+#           value: amqp-webhook
+#         - name: WEBHOOK_PORT
+#           value: "8443"
+
+#         securityContext:
+#           allowPrivilegeEscalation: false
+
+#         ports:
+#         - name: https-webhook
+#           containerPort: 8443
+#         - name: metrics
+#           containerPort: 9090
+#         - name: profiling
+#           containerPort: 8008
+
+#         readinessProbe: &probe
+#           periodSeconds: 1
+#           httpGet:
+#             scheme: HTTPS
+#             port: 8443
+#             httpHeaders:
+#             - name: k-kubelet-probe
+#               value: "webhook"
+#         livenessProbe:
+#           <<: *probe
+#           initialDelaySeconds: 20
+
+#       # Our webhook should gracefully terminate by lame ducking first, set this to a sufficiently
+#       # high value that we respect whatever value it has configured for the lame duck grace period.
+#       terminationGracePeriodSeconds: 300
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   labels:
+#     amqp.eventing.knative.dev/release: devel
+#     role: amqp-webhook
+#   name: amqp-webhook
+#   namespace: playground
+# spec:
+#   ports:
+#     - name: https-webhook
+#       port: 443
+#       targetPort: 8443
+#   selector:
+#     role: amqp-webhook

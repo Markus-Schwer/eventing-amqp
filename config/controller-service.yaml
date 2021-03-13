@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: amqp-controller
+  namespace: playground
+  labels:
+    amqp.eventing.knative.dev/release: devel
+    control-plane: amqp-controller-manager
+spec:
+  selector:
+    control-plane: amqp-controller-manager
+  ports:
+    - name: https-amqp
+      port: 443

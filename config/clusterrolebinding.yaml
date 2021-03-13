@@ -1,0 +1,33 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eventing-sources-amqp-controller
+  labels:
+    amqp.eventing.knative.dev/release: devel
+subjects:
+  - kind: ServiceAccount
+    name: amqp-controller-manager
+    namespace: playground
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: eventing-sources-amqp-controller
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eventing-sources-amqp-controller-addressable-resolver
+  labels:
+    amqp.eventing.knative.dev/release: devel
+subjects:
+  - kind: ServiceAccount
+    name: amqp-controller-manager
+    namespace: playground
+# An aggregated ClusterRole for all Addressable CRDs.
+# Ref: https://knative.dev/eventing/blob/master/config/200-addressable-resolvers-clusterrole.yaml
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: addressable-resolver

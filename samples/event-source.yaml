@@ -1,0 +1,21 @@
+apiVersion: sources.knative.dev/v1alpha1
+kind: AmqpSource
+metadata:
+  name: amqp-source
+spec:
+  broker: artemis:5672
+  topic: test
+  user:
+    secretKeyRef:
+      name: AMQP_USER
+      key: artemis
+  password:
+    secretKeyRef:
+      name: AMQP_PASSWORD
+      key: artemis
+
+  sink:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: event-display
