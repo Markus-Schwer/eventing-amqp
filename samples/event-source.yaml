@@ -7,15 +7,24 @@ spec:
   topic: test
   user:
     secretKeyRef:
-      name: AMQP_USER
-      key: artemis
+      name: artemis-admin-secret
+      key: AMQP_USER
   password:
     secretKeyRef:
-      name: AMQP_PASSWORD
-      key: artemis
+      name: artemis-admin-secret
+      key: AMQP_PASSWORD
 
   sink:
     ref:
       apiVersion: serving.knative.dev/v1
       kind: Service
       name: event-display
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: artemis-admin-secret
+type: Opaque
+stringData:
+  AMQP_USER: "artemis"
+  AMQP_PASSWORD: "artemis"

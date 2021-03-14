@@ -30,7 +30,7 @@ import (
 // envConfig will be used to extract the required environment variables.
 // If this configuration cannot be extracted, then NewController will panic.
 type envConfig struct {
-	Image string `envconfig:"AMQP_RA_IMAGE"`
+	Image string `envconfig:"AMQP_RA_IMAGE" required:"true"`
 }
 
 func NewController(ctx context.Context, _ configmap.Watcher) *controller.Impl {
@@ -46,7 +46,7 @@ func NewController(ctx context.Context, _ configmap.Watcher) *controller.Impl {
 		kubeClientSet:       kubeclient.Get(ctx),
 		amqpClientSet:       amqpclient.Get(ctx),
 		deploymentLister:    deploymentInformer.Lister(),
-		receiveAdapterImage: env.Image, // can be empty
+		receiveAdapterImage: env.Image,
 	}
 	impl := amqpreconciler.NewImpl(ctx, r)
 

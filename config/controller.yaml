@@ -29,7 +29,7 @@ spec:
               value: knative.dev/sources
             - name: CONFIG_OBSERVABILITY_NAME
               value: config-observability
-            - name: amqp_RA_IMAGE
+            - name: AMQP_RA_IMAGE
               value: ko://github.com/Markus-Schwer/eventing-amqp/cmd/receive_adapter
           volumeMounts:
           resources:
