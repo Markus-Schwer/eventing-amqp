@@ -115,28 +115,34 @@ func (a *Adapter) Start(ctx context.Context) error {
 	receiver, err := a.CreateReceiver(session, logger)
 	if err == nil {
 		defer func() {
+			logger.Error("closing receiver")
 			closeTimetoutCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 			receiver.Close(closeTimetoutCtx)
 			cancel()
 		}()
 	}
 
-	// queue, err := a.StartAmqpClient(&ch)
-	// if err != nil {
-	// 	logger.Error(err.Error())
-	// }
+	go a.HandleMessages(ctx, receiver, logger)
 
-	return a.PollForMessages(ctx, receiver, logger, ctx.Done())
-}
-
-func (a *Adapter) ConsumeMessage(msg *amqp.Message) error {
+	<-ctx.Done()
+	logger.Info("context closed")
 	return nil
 }
 
-func (a *Adapter) PollForMessages(ctx context.Context, receiver *amqp.Receiver, logger *zap.Logger, stopCh <-chan struct{}) error {
+func (a *Adapter) HandleMessages(ctx context.Context, receiver *amqp.Receiver, logger *zap.Logger) {
 	for {
-		err := receiver.HandleMessage(ctx, func(msg *amqp.Message) error {
-			logger.Info("Received message: %s", zap.Any("value", msg.GetData()))
+		select {
+		case <-ctx.Done():
+			logger.Error("context closed")
+			return
+		default:
+			logger.Info("Listening for messages...")
+			msg, err := receiver.Receive(ctx)
+			if err != nil {
+				logger.Error("Error occured when receiving message", zap.Error(err))
+			}
+
+			logger.Info("Received AMQP message")
 
 			if err := a.postMessage(msg); err == nil {
 				logger.Info("Successfully sent event to sink")
@@ -145,23 +151,13 @@ func (a *Adapter) PollForMessages(ctx context.Context, receiver *amqp.Receiver, 
 					logger.Error("Sending Accept failed")
 				}
 			} else {
-				logger.Error("Sending event to sink failed: ", zap.Error(err))
-				err = msg.Release(ctx)
+				logger.Error("Sending event to sink failed", zap.Error(err))
+				// TODO: don't retry, reject.
+				err = msg.Modify(ctx, true, false, nil)
 				if err != nil {
 					logger.Error("Sending Release failed")
 				}
 			}
-
-			return nil
-		})
-		if err != nil {
-			logger.Error("Reading message from AMQP:", zap.Error(err))
-		}
-
-		select {
-		case <-stopCh:
-			logger.Info("Shutting down...")
-			return nil
 		}
 	}
 }
@@ -173,7 +169,9 @@ func (a *Adapter) postMessage(msg *amqp.Message) error {
 		return err
 	}
 
-	// TODO: See if the message is already a Cloud Event and if so, do not wrap, just use as is.
+	a.logger.Info(fmt.Sprintf("Message ID: %v", msg.Properties.MessageID))
+	a.logger.Info(fmt.Sprintf("ContentType: %v", msg.Properties.ContentType))
+
 	event := cloudevents.NewEvent()
 	if msg.Properties.MessageID != nil {
 		event.SetID(string(msg.Properties.MessageID.(string)))
@@ -186,8 +184,13 @@ func (a *Adapter) postMessage(msg *amqp.Message) error {
 	event.SetSubject(msg.Properties.Subject)
 	event.SetExtension("key", msg.Properties.MessageID)
 
-	// TODO: Check the content type and use it instead.
-	err = event.SetData(msg.Properties.ContentType, msg.GetData())
+	contentType := msg.Properties.ContentType
+	if contentType == "" {
+		contentType = *cloudevents.StringOfApplicationJSON()
+	}
+
+	// TODO: check what happens if value is not a string
+	err = event.SetData(contentType, []byte(msg.Value.(string)))
 	if err != nil {
 		return err
 	}
